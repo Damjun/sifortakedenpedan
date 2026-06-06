@@ -6063,6 +6063,63 @@ html, body { overflow-x: hidden !important; overflow-y: auto !important; }
     .map-panel-grid-2 { grid-template-columns: 1fr; }
 }
 
+
+
+/* ============================================================
+   PATCH FINAL REQUEST: JELAJAH INFO PETA KANAN ATAS + LOGIN AWAL
+   ============================================================ */
+.map-query-center-panel.leaflet-control {
+    display: block !important;
+    position: relative !important;
+    top: auto !important;
+    right: auto !important;
+    left: auto !important;
+    transform: none !important;
+    width: 460px !important;
+    max-width: min(460px, calc(100vw - 380px)) !important;
+    margin: 12px 12px 0 0 !important;
+    z-index: 1000 !important;
+    background: linear-gradient(180deg, rgba(7, 29, 18, 0.95), rgba(6, 37, 22, 0.92)) !important;
+}
+.map-query-center-panel .map-panel-range-label {
+    border-top: 1px solid rgba(255,255,255,0.09);
+    margin-top: 8px;
+}
+.map-query-center-panel .map-query-results {
+    max-height: 175px !important;
+    overflow-y: auto !important;
+}
+.map-layer-panel.leaflet-control {
+    width: 292px !important;
+}
+body.has-login-modal .navbar,
+body.has-login-modal .main {
+    filter: blur(4px);
+    pointer-events: none;
+    user-select: none;
+}
+#loginModal.initial-open {
+    display: flex;
+}
+@media (max-width: 960px) {
+    .map-query-center-panel.leaflet-control {
+        width: 330px !important;
+        max-width: calc(100vw - 28px) !important;
+        margin: 74px 12px 0 12px !important;
+    }
+}
+@media (max-width: 640px) {
+    .map-query-center-panel.leaflet-control {
+        width: calc(100vw - 26px) !important;
+        max-width: calc(100vw - 26px) !important;
+        margin-top: 72px !important;
+    }
+    .map-query-center-grid,
+    .map-query-center-actions {
+        grid-template-columns: 1fr !important;
+    }
+}
+
 </style>
 
 <script>
@@ -8432,37 +8489,6 @@ kantorDesaMarker.bindPopup(
             '</div>' +
             '<div class="map-panel-section">' +
                 '<button type="button" class="map-panel-head" onclick="toggleMapPanel(this)">' +
-                    '<span class="map-panel-head-left"><span>🔎</span> Search & Filter</span>' +
-                    '<span class="map-toggle-icon">⌄</span>' +
-                '</button>' +
-                '<div class="map-panel-body">' +
-                    '<input class="map-panel-input dark" type="search" id="mapSearchInput" placeholder="Cari NOP, nama, hak, penggunaan lahan...">' +
-                    '<select class="map-panel-select dark" id="hakFilterSelect" style="margin-top:8px;">' +
-                        '<option value="">Semua kategori</option>' +
-                        '<optgroup label="Status Hak Persil">' +
-                            '<option value="hak:milik">Hak Milik</option>' +
-                            '<option value="hak:guna bangunan">Hak Guna Bangunan</option>' +
-                            '<option value="hak:pakai">Hak Pakai</option>' +
-                            '<option value="hak:jaringan">Jaringan Jalan</option>' +
-                        '</optgroup>' +
-                        '<optgroup label="Penggunaan Lahan">' +
-                            '<option value="">Memuat jenis penggunaan lahan...</option>' +
-                        '</optgroup>' +
-                    '</select>' +
-                    '<label class="map-panel-range-label" for="areaMinInput">Filter Luas Bidang Tanah (m²)</label>' +
-                    '<div class="map-panel-grid-2">' +
-                        '<input class="map-panel-input dark" type="number" min="0" id="areaMinInput" placeholder="Min">' +
-                        '<input class="map-panel-input dark" type="number" min="0" id="areaMaxInput" placeholder="Max">' +
-                    '</div>' +
-                    '<div class="map-query-center-actions">' +
-                        '<button type="button" class="map-panel-mini-btn" id="applyMapQueryBtn">Terapkan</button>' +
-                        '<button type="button" class="map-panel-mini-btn" id="resetMapQueryBtn">Reset</button>' +
-                    '</div>' +
-                    '<div class="map-query-results" id="mapQueryResults"></div>' +
-                '</div>' +
-            '</div>' +
-            '<div class="map-panel-section">' +
-                '<button type="button" class="map-panel-head" onclick="toggleMapPanel(this)">' +
                     '<span class="map-panel-head-left"><span>✏️</span> Digitasi</span>' +
                     '<span class="map-toggle-icon">⌄</span>' +
                 '</button>' +
@@ -8483,7 +8509,42 @@ kantorDesaMarker.bindPopup(
     };
 
     mapPanel.addTo(map);
-    /* Panel query lama di kanan dinonaktifkan; semua tools dipindah ke panel kiri. */
+
+    /* Panel jelajah info peta di kanan atas */
+    var queryPanel = L.control({ position: 'topright' });
+    queryPanel.onAdd = function () {
+        var div = L.DomUtil.create('div', 'map-query-center-panel leaflet-control');
+        div.innerHTML =
+            '<div class="map-query-center-head"><span>🔎</span> Jelajah Info Peta</div>' +
+            '<input class="map-panel-input dark" type="search" id="mapSearchInput" placeholder="Cari NOP, nama, hak, penggunaan lahan...">' +
+            '<select class="map-panel-select dark" id="hakFilterSelect" style="margin-top:8px;">' +
+                '<option value="">Semua kategori</option>' +
+                '<optgroup label="Status Hak Persil">' +
+                    '<option value="hak:milik">Hak Milik</option>' +
+                    '<option value="hak:guna bangunan">Hak Guna Bangunan</option>' +
+                    '<option value="hak:pakai">Hak Pakai</option>' +
+                    '<option value="hak:jaringan">Jaringan Jalan</option>' +
+                '</optgroup>' +
+                '<optgroup label="Penggunaan Lahan">' +
+                    '<option value="">Memuat jenis penggunaan lahan...</option>' +
+                '</optgroup>' +
+            '</select>' +
+            '<label class="map-panel-range-label" for="areaMinInput">Filter Luas Bidang Tanah (m²)</label>' +
+            '<div class="map-query-center-grid">' +
+                '<input class="map-panel-input dark" type="number" min="0" id="areaMinInput" placeholder="Min luas">' +
+                '<input class="map-panel-input dark" type="number" min="0" id="areaMaxInput" placeholder="Max luas">' +
+            '</div>' +
+            '<div class="map-query-center-actions">' +
+                '<button type="button" class="map-panel-mini-btn" id="applyMapQueryBtn">Terapkan</button>' +
+                '<button type="button" class="map-panel-mini-btn" id="resetMapQueryBtn">Reset</button>' +
+            '</div>' +
+            '<div class="map-query-results" id="mapQueryResults"></div>';
+        L.DomEvent.disableClickPropagation(div);
+        L.DomEvent.disableScrollPropagation(div);
+        return div;
+    };
+    queryPanel.addTo(map);
+    
 
     wireQueryControls();
     wireDrawControls();
@@ -9185,6 +9246,7 @@ onAuthStateChanged(auth, async function(user) {
                 role: normalizeRole(profile.role),
                 status: profile.status || 'aktif'
             });
+            setLoginModalState(false);
         }
     } catch (err) {
         console.warn('Gagal membaca profil user:', err);
@@ -9195,6 +9257,20 @@ document.addEventListener('DOMContentLoaded', function() {
     setupForms();
     updateRegisterRoleFields();
     applyAccessUI({ loggedIn: false, username: 'Tamu', role: 'masyarakat' });
+
+    // Saat link website dibuka, tampilkan laman login terlebih dahulu.
+    // Pengunjung tetap bisa memilih tombol Masuk sebagai Masyarakat/Tamu.
+    setTimeout(function() {
+        try {
+            if (!auth.currentUser) {
+                showAuthForm('login');
+                setLoginModalState(true);
+            }
+        } catch (err) {
+            showAuthForm('login');
+            setLoginModalState(true);
+        }
+    }, 250);
 });
 </script>
 
