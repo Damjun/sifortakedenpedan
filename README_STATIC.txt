@@ -1,0 +1,1 @@
+Versi HTML statis SIFORTA untuk GitHub Pages. Upload seluruh isi folder ini ke repository. File PHP, _private, dan users.json tidak disertakan. Login/register hanya simulasi localStorage di browser, bukan autentikasi server.
