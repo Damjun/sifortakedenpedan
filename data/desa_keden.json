@@ -1,0 +1,25 @@
+{
+  "status": "local",
+  "updated_at": "2026-06-06T08:04:58+00:00",
+  "profil": {
+    "luas_wilayah_ha": 133.79,
+    "total_penduduk": 4333,
+    "kepala_keluarga": 1633,
+    "laki_laki": 2129,
+    "perempuan": 2204,
+    "tahun_data": 2025,
+    "batas_utara": "Desa Sobayan dan Tambakboyo",
+    "batas_timur": "Desa Jetiswetan",
+    "batas_selatan": "Desa Sumber, Kecamatan Trucuk",
+    "batas_barat": "Desa Tambakboyo"
+  },
+  "agama": {
+    "Islam": 3998,
+    "Kristen": 227,
+    "Katolik": 103,
+    "Hindu": 5,
+    "Budha": 0,
+    "Konghucu": 0
+  },
+  "catatan": "Versi HTML statis untuk GitHub Pages. Perubahan form admin disimpan di browser lokal, bukan server."
+}
