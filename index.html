@@ -7255,13 +7255,13 @@ window.addEventListener('DOMContentLoaded', function() {
                 <button type="button" id="switchRegisterBtn" class="simple-login-tab" onclick="showAuthForm('register')">Buat Akun</button>
             </div>
 
-            <form class="guest-form" action="javascript:void(0);">
-                <button type="submit" class="simple-login-guest"><span>👀</span> Masuk sebagai Masyarakat / Tamu</button>
+            <form class="guest-form" method="get" action="javascript:void(0);" onsubmit="return sifortaEnterGuest(event);">
+                <button type="button" class="simple-login-guest" onclick="sifortaEnterGuest(event)"><span>👀</span> Masuk sebagai Masyarakat / Tamu</button>
             </form>
 
             <div class="simple-login-divider">Akses Pengguna Khusus</div>
 
-            <form id="loginForm" class="auth-form active" action="javascript:void(0);">
+            <form id="loginForm" class="auth-form active" method="get" action="javascript:void(0);">
                 <label class="login-label" for="login_role_hint_select">Mode Akses</label>
                 <div class="simple-role-select">
                     <select id="login_role_hint_select" name="login_role_hint" required>
@@ -7297,7 +7297,7 @@ window.addEventListener('DOMContentLoaded', function() {
                 </div>
             </form>
 
-            <form id="registerForm" class="auth-form" action="javascript:void(0);">
+            <form id="registerForm" class="auth-form" method="get" action="javascript:void(0);">
                 <label class="login-label" for="register_role">Jenis Pengguna Baru</label>
                 <div class="simple-role-select">
                     <select id="register_role" name="register_role" required onchange="updateRegisterRoleFields()">
@@ -7388,7 +7388,7 @@ window.addEventListener('DOMContentLoaded', function() {
                 </div>
             </form>
 
-            <button class="simple-login-cancel" onclick="closeLogin()">Batal</button>
+            <button class="simple-login-cancel" onclick="closeLogin()" style="display:none !important;">Batal</button>
 </div>
     </div>
 </div>
@@ -9276,35 +9276,108 @@ kantorDesaMarker.bindPopup(
 
 
 
+
+
+
+
+<script>
+// SIFORTA FINAL V10 - modal login muncul pertama dan tombol tamu selalu berfungsi.
+window.SIFORTA_FORCE_LOGIN_ON_LOAD = true;
+window.SIFORTA_LOGIN_ACTION_OCCURRED = false;
+
+function sifortaSetLoginVisible(show) {
+    var modal = document.getElementById('loginModal');
+    if (modal) modal.style.display = show ? 'flex' : 'none';
+    document.body.classList.toggle('has-login-modal', !!show);
+}
+
+window.openLogin = function openLogin() {
+    window.SIFORTA_LOGIN_ACTION_OCCURRED = false;
+    sifortaSetLoginVisible(true);
+};
+
+window.closeLogin = function closeLogin() {
+    if (!window.SIFORTA_LOGIN_ACTION_OCCURRED) return;
+    sifortaSetLoginVisible(false);
+};
+
+window.showAuthForm = function showAuthForm(mode) {
+    var loginForm = document.getElementById('loginForm');
+    var registerForm = document.getElementById('registerForm');
+    var loginBtn = document.getElementById('switchLoginBtn');
+    var registerBtn = document.getElementById('switchRegisterBtn');
+    var title = document.getElementById('authTitle');
+    var isRegister = mode === 'register';
+    if (loginForm) loginForm.classList.toggle('active', !isRegister);
+    if (registerForm) registerForm.classList.toggle('active', isRegister);
+    if (loginBtn) loginBtn.classList.toggle('active', !isRegister);
+    if (registerBtn) registerBtn.classList.toggle('active', isRegister);
+    if (title) title.textContent = isRegister ? 'Buat Akun' : 'Masuk';
+};
+
+window.speakWelcomeSiforta = window.speakWelcomeSiforta || function(force) {
+    try {
+        if (!('speechSynthesis' in window)) return;
+        window.speechSynthesis.cancel();
+        var utterance = new SpeechSynthesisUtterance('Selamat datang di website SIFORTA Desa Keden');
+        utterance.lang = 'id-ID';
+        utterance.rate = 0.95;
+        utterance.pitch = 1;
+        window.speechSynthesis.speak(utterance);
+    } catch (err) {}
+};
+
+window.sifortaEnterGuest = function sifortaEnterGuest(ev) {
+    if (ev && ev.preventDefault) ev.preventDefault();
+    window.SIFORTA_LOGIN_ACTION_OCCURRED = true;
+    try {
+        if (typeof window.applyAccessUI === 'function') {
+            window.applyAccessUI({ loggedIn: false, nama: 'Masyarakat Umum', role: 'masyarakat', status: 'aktif' });
+        }
+    } catch (err) {}
+    sifortaSetLoginVisible(false);
+    try { window.speakWelcomeSiforta(true); } catch (err) {}
+    try { if (typeof scrollToSection === 'function') scrollToSection('sec-peta'); } catch (err) {}
+    return false;
+};
+
+window.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('form').forEach(function(form) {
+        form.setAttribute('method', 'get');
+        form.setAttribute('action', 'javascript:void(0);');
+    });
+    if (!window.SIFORTA_LOGIN_ACTION_OCCURRED) {
+        sifortaSetLoginVisible(true);
+        window.showAuthForm('login');
+    }
+});
+window.addEventListener('load', function() {
+    if (!window.SIFORTA_LOGIN_ACTION_OCCURRED) sifortaSetLoginVisible(true);
+});
+</script>
+
 <script type="module">
-/* ============================================================
-   FIREBASE AUTH + FIRESTORE MODE UNTUK GITHUB PAGES
-   Role sistem:
-   - masyarakat: tanpa login / masuk sebagai tamu
-   - pelajar_peneliti: login, wajib isi universitas/sekolah
-   - instansi: login, wajib isi identitas instansi, status awal menunggu verifikasi
-   - admin: login, dibuat/diaktifkan lewat Firestore; kode admin hanya filter awal UI
-   ============================================================ */
+// SIFORTA FINAL V10 - Firebase Auth bersih tanpa username dan tanpa POST ke GitHub Pages.
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import {
-    getAuth,
-    createUserWithEmailAndPassword,
-    signInWithEmailAndPassword,
-    sendPasswordResetEmail,
-    signOut,
-    onAuthStateChanged,
-    setPersistence,
-    browserLocalPersistence,
-    browserSessionPersistence
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  sendPasswordResetEmail,
+  signOut,
+  onAuthStateChanged,
+  setPersistence,
+  browserLocalPersistence,
+  browserSessionPersistence
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import {
-    getFirestore,
-    doc,
-    getDoc,
-    setDoc,
-    collection,
-    addDoc,
-    serverTimestamp
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc,
+  collection,
+  addDoc,
+  serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -9319,487 +9392,348 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-
-// Ganti kode ini sebelum publik final. Ini hanya gerbang UI; hak admin final tetap dari Firestore.
-const ADMIN_INVITE_CODE = "SIFORTA-ADMIN-KEDEN-2026";
 const STORAGE_AUTH = 'siforta_static_auth';
+const ADMIN_INVITE_CODE = 'SIFORTA-ADMIN-KEDEN-2026';
 
 const roleLabels = {
-    masyarakat: 'Masyarakat / Tamu',
-    pelajar_peneliti: 'Pelajar / Peneliti',
-    instansi: 'Instansi',
-    pending_instansi: 'Instansi Menunggu Verifikasi',
-    admin: 'Admin',
-    pending_admin: 'Admin Menunggu Verifikasi'
+  masyarakat: 'Masyarakat / Tamu',
+  pelajar_peneliti: 'Pelajar / Peneliti',
+  instansi: 'Instansi',
+  pending_instansi: 'Instansi - Menunggu Verifikasi',
+  admin: 'Admin',
+  pending_admin: 'Admin - Menunggu Verifikasi'
 };
 
 function normalizeRole(role) {
-    role = String(role || 'masyarakat').toLowerCase();
-    return roleLabels[role] ? role : 'masyarakat';
+  role = String(role || 'masyarakat').toLowerCase();
+  return roleLabels[role] ? role : 'masyarakat';
 }
+function labelFor(role) { return roleLabels[normalizeRole(role)] || roleLabels.masyarakat; }
+function canDownload(role) { return ['pelajar_peneliti','instansi','admin'].includes(normalizeRole(role)); }
+function canAddData(role) { return ['instansi','admin'].includes(normalizeRole(role)); }
+function isValidEmailFormat(email) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || '').trim()); }
+function getInputValue(id) { const el = document.getElementById(id); return el ? String(el.value || '').trim() : ''; }
 
-function labelFor(role) {
-    return roleLabels[normalizeRole(role)] || roleLabels.masyarakat;
-}
-
-function canDownload(role) {
-    return ['pelajar_peneliti', 'instansi', 'admin'].indexOf(normalizeRole(role)) !== -1;
-}
-
-function canAddData(role) {
-    return ['instansi', 'admin'].indexOf(normalizeRole(role)) !== -1;
-}
-
-function setTextSafe(id, value) {
-    var el = document.getElementById(id);
-    if (el) el.textContent = value;
-}
-
-function showDownloadAllowed(show) {
-    document.querySelectorAll('a[href*="1hRGLJ0HfssKpht2zdgZtnWpXhEq6GrV-"]').forEach(function(el, index) {
-        el.style.display = show ? '' : 'none';
-        var holder = el.parentElement || el.closest('.service-access-card-v7') || el.closest('.service-actions-v7');
-        if (!holder) return;
-        var msgClass = 'download-login-note';
-        var note = holder.querySelector('.' + msgClass);
-        if (!show) {
-            if (!note) {
-                note = document.createElement('p');
-                note.className = msgClass;
-                note.style.marginTop = '10px';
-                note.style.padding = '11px 13px';
-                note.style.borderRadius = '12px';
-                note.style.background = 'rgba(224,245,234,0.78)';
-                note.style.border = '1px solid rgba(42,138,82,0.18)';
-                note.style.color = 'var(--text-mid)';
-                note.style.fontSize = '12.8px';
-                note.style.lineHeight = '1.55';
-                holder.appendChild(note);
-            }
-            note.textContent = 'Bagian ini baru bisa didownload ketika login sebagai Pelajar/Peneliti atau Instansi yang telah terverifikasi.';
-        } else if (note) {
-            note.remove();
-        }
-    });
-}
-
-function showUploadAllowed(show) {
-    document.querySelectorAll('a[href*="1cOD45QeK1JE1FB1Wtjapr31sm0pxr9Lo"]').forEach(function(el) {
-        el.style.display = show ? '' : 'none';
-    });
-}
-
-function saveLocalAuth(authData) {
-    localStorage.setItem(STORAGE_AUTH, JSON.stringify(authData));
-    window.staticAuthState = authData;
-    window.IS_LOGGED_IN = !!authData.loggedIn;
-    window.USER_ROLE = normalizeRole(authData.role);
-    window.CAN_VIEW_POPUP = true;
-    window.CAN_DOWNLOAD_DATA = canDownload(window.USER_ROLE);
-    window.CAN_ADD_DATA = canAddData(window.USER_ROLE);
-}
-
-function applyAccessUI(authData) {
-    authData = authData || { loggedIn: false, username: 'Tamu', role: 'masyarakat' };
-    saveLocalAuth(authData);
-
-    var nav = document.getElementById('navUserActions');
-    if (nav) {
-        if (authData.loggedIn) {
-            nav.innerHTML = '<a href="#sec-layanan" onclick="navClick(this); return false;" class="nav-auth nav-auth-role"><i class="ti ti-user-shield"></i> ' + labelFor(authData.role) + '</a>' +
-                            '<a href="#" onclick="firebaseLogout(event)" class="nav-auth logout"><i class="ti ti-power"></i> Logout</a>';
-        } else {
-            nav.innerHTML = '<a href="#" onclick="openLogin(); return false;" class="nav-auth login"><i class="ti ti-login"></i> Login</a>';
-        }
-    }
-
-    var status = document.getElementById('accessStatusText');
-    if (status) {
-        status.textContent = authData.loggedIn ? ((authData.nama || authData.username || authData.email || 'Pengguna') + ' — ' + labelFor(authData.role)) : 'Belum login / Masyarakat Umum';
-    }
-
-    showDownloadAllowed(canDownload(authData.role));
-    showUploadAllowed(canAddData(authData.role));
-
-    var cancel = document.querySelector('.simple-login-cancel');
-    if (cancel) cancel.style.display = '';
-}
-
-function flashMessage(formId, message, isError) {
-    var form = document.getElementById(formId);
-    if (!form) return;
-    var cls = formId === 'loginForm' ? 'firebase-login-message' : 'firebase-register-message';
-    var box = form.querySelector('.' + cls) || document.createElement('div');
-    box.className = 'login-error auth-message ' + cls + (isError ? '' : ' success');
-    box.style.display = 'block';
-    box.textContent = message;
-    if (!box.parentNode) form.insertBefore(box, form.firstChild);
-    try { box.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (err) {}
-}
-
-function getInputValue(id) {
-    var el = document.getElementById(id);
-    return el ? String(el.value || '').trim() : '';
-}
-
-function isValidEmailFormat(email) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || '').trim());
+function flashMessage(formId, message, isError = true) {
+  const form = document.getElementById(formId);
+  if (!form) return;
+  const cls = formId === 'loginForm' ? 'firebase-login-message' : 'firebase-register-message';
+  let box = form.querySelector('.' + cls);
+  if (!box) {
+    box = document.createElement('div');
+    form.insertBefore(box, form.firstChild);
+  }
+  box.className = 'login-error auth-message ' + cls + (isError ? '' : ' success');
+  box.style.display = 'block';
+  box.style.whiteSpace = 'pre-line';
+  box.textContent = message;
+  try { box.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (err) {}
 }
 
 function firebaseFriendlyMessage(err, context) {
-    var raw = String((err && (err.code || err.message)) || err || '');
-    var lower = raw.toLowerCase();
-
-    if (lower.includes('auth/invalid-email')) {
-        return 'Format email belum benar.
-
-Isi Email Akun WebGIS dengan alamat email lengkap, contoh: nama@gmail.com. Nama pendek seperti juna28 tidak bisa dipakai untuk login atau reset password. Gunakan email lengkap.';
-    }
-    if (lower.includes('auth/email-already-in-use')) {
-        return 'Email ini sudah pernah terdaftar.
-
-Silakan kembali ke menu Masuk dan login memakai email tersebut. Jika lupa password, klik Lupa password? untuk memperbarui sandi melalui Gmail/email.';
-    }
-    if (lower.includes('auth/user-not-found')) {
-        return 'Email ini belum terdaftar sebagai akun WebGIS.
-
-Periksa kembali penulisan email. Jika belum punya akun, pilih Buat Akun. Jika hanya ingin melihat peta, pilih Masuk sebagai Masyarakat / Tamu.';
-    }
-    if (lower.includes('auth/wrong-password') || lower.includes('auth/invalid-credential') || lower.includes('auth/invalid-login-credentials')) {
-        return 'Email atau password WebGIS tidak cocok.
-
-Pastikan email yang diisi adalah email lengkap yang dipakai saat daftar, bukan username. Jika lupa password, klik Lupa password? untuk reset melalui Gmail/email.';
-    }
-    if (lower.includes('auth/weak-password')) {
-        return 'Password terlalu pendek. Gunakan minimal 6 karakter.';
-    }
-    if (lower.includes('auth/network-request-failed')) {
-        return 'Koneksi internet bermasalah. Periksa jaringan, lalu coba lagi.';
-    }
-    if (lower.includes('permission-denied') || lower.includes('insufficient permissions')) {
-        return 'Akses ditolak oleh database.
-
-Kemungkinan data role user belum dibuat atau rules Firestore belum sesuai. Hubungi admin/pengelola SIFORTA.';
-    }
-    if (context === 'reset') {
-        return 'Reset password belum berhasil. Pastikan email yang diisi adalah email akun WebGIS yang valid dan sudah terdaftar.';
-    }
-    if (context === 'register') {
-        return 'Pendaftaran belum berhasil. Periksa kembali email, password, dan data wajib. Jika email sudah terdaftar, gunakan menu Masuk atau Lupa password?.';
-    }
-    return 'Terjadi kendala. Periksa kembali data yang diisi, lalu coba lagi.';
+  const raw = String((err && (err.code || err.message)) || err || '').toLowerCase();
+  if (raw.includes('auth/invalid-email')) {
+    return 'Format email belum benar.\n\nIsi Email Akun WebGIS dengan alamat email lengkap, contoh: nama@gmail.com. Nama pendek seperti juna28 tidak bisa dipakai untuk login atau reset password.';
+  }
+  if (raw.includes('auth/email-already-in-use')) {
+    return 'Email ini sudah pernah terdaftar.\n\nSilakan kembali ke menu Masuk dan login memakai email tersebut. Jika lupa password, klik Lupa password? untuk memperbarui sandi melalui Gmail/email.';
+  }
+  if (raw.includes('auth/user-not-found')) {
+    return 'Email ini belum terdaftar sebagai akun WebGIS.\n\nPeriksa kembali penulisan email. Jika belum punya akun, pilih Buat Akun. Jika hanya ingin melihat peta, pilih Masuk sebagai Masyarakat / Tamu.';
+  }
+  if (raw.includes('auth/wrong-password') || raw.includes('auth/invalid-credential') || raw.includes('auth/invalid-login-credentials')) {
+    return 'Email atau password belum sesuai.\n\nPastikan email yang diisi adalah email lengkap yang dipakai saat daftar. Jika lupa password, klik Lupa password? untuk reset melalui Gmail/email.';
+  }
+  if (raw.includes('auth/weak-password')) return 'Password terlalu lemah. Gunakan minimal 6 karakter.';
+  if (raw.includes('permission-denied') || raw.includes('missing or insufficient permissions')) {
+    return 'Akses Firestore ditolak. Periksa kembali Firestore Rules dan pastikan role user sudah dibuat di collection users.';
+  }
+  if (context === 'reset') return 'Gagal mengirim link reset password. Pastikan email sudah terdaftar sebagai akun WebGIS.';
+  if (context === 'register') return 'Pendaftaran gagal. Periksa kembali data akun dan koneksi internet.';
+  return 'Terjadi kendala: ' + ((err && err.message) ? err.message : String(err || 'Tidak diketahui'));
 }
 
+function setDownloadAccess(show) {
+  const downloadLinks = Array.from(document.querySelectorAll('a[href*="drive.google.com"]'));
+  downloadLinks.forEach((link) => {
+    const text = (link.textContent || '').toLowerCase();
+    const isDownload = text.includes('download');
+    const isUpload = text.includes('tambah') || text.includes('update') || text.includes('upload');
+    if (isDownload && !show) {
+      link.dataset.originalHref = link.dataset.originalHref || link.getAttribute('href') || '';
+      link.removeAttribute('href');
+      link.classList.add('locked');
+      link.style.pointerEvents = 'none';
+      link.textContent = 'Bagian ini baru bisa didownload ketika login sebagai Pelajar/Peneliti atau Instansi yang telah terverifikasi.';
+    } else if (isDownload && show && link.dataset.originalHref) {
+      link.setAttribute('href', link.dataset.originalHref);
+      link.classList.remove('locked');
+      link.style.pointerEvents = '';
+      link.innerHTML = '<i class="ti ti-download"></i> Download Data';
+    }
+  });
+}
+
+function setUploadAccess(show) {
+  Array.from(document.querySelectorAll('a[href*="drive.google.com"]')).forEach((link) => {
+    const text = (link.textContent || '').toLowerCase();
+    const isUpload = text.includes('tambah') || text.includes('update') || text.includes('upload');
+    if (isUpload && !show) {
+      link.dataset.originalHref = link.dataset.originalHref || link.getAttribute('href') || '';
+      link.removeAttribute('href');
+      link.classList.add('locked');
+      link.style.pointerEvents = 'none';
+      link.textContent = 'Update data hanya tersedia untuk Instansi terverifikasi atau Admin.';
+    } else if (isUpload && show && link.dataset.originalHref) {
+      link.setAttribute('href', link.dataset.originalHref);
+      link.classList.remove('locked');
+      link.style.pointerEvents = '';
+      link.innerHTML = '<i class="ti ti-upload"></i> Tambah Data';
+    }
+  });
+}
+
+window.applyAccessUI = function applyAccessUI(authData) {
+  authData = authData || { loggedIn: false, nama: 'Masyarakat Umum', role: 'masyarakat', status: 'aktif' };
+  const role = normalizeRole(authData.role);
+  try { localStorage.setItem(STORAGE_AUTH, JSON.stringify(authData)); } catch (err) {}
+  const nav = document.getElementById('navUserActions');
+  if (nav) {
+    if (authData.loggedIn) {
+      nav.innerHTML = '<a href="#sec-layanan" onclick="navClick(this); return false;" class="nav-auth nav-auth-role"><i class="ti ti-user-shield"></i> ' + labelFor(role) + '</a>' +
+        '<a href="#" onclick="firebaseLogout(event)" class="nav-auth logout"><i class="ti ti-power"></i> Logout</a>';
+    } else {
+      nav.innerHTML = '<a href="#" onclick="openLogin(); return false;" class="nav-auth login"><i class="ti ti-login"></i> Login</a>';
+    }
+  }
+  const status = document.getElementById('accessStatusText');
+  if (status) status.textContent = authData.loggedIn ? ((authData.nama || authData.email || 'Pengguna') + ' — ' + labelFor(role)) : 'Belum login / Masyarakat Umum';
+  setDownloadAccess(canDownload(role));
+  setUploadAccess(canAddData(role));
+};
+
 window.updateRegisterRoleFields = function updateRegisterRoleFields() {
-    var role = getInputValue('register_role') || 'pelajar_peneliti';
-    var univ = document.getElementById('fieldUniversitas');
-    var instansi = document.getElementById('fieldInstansi');
-    var adminCode = document.getElementById('fieldAdminCode');
-    var hint = document.getElementById('registerRoleHint');
-
-    if (univ) univ.classList.toggle('show', role === 'pelajar_peneliti');
-    if (instansi) instansi.classList.toggle('show', role === 'instansi');
-    if (adminCode) adminCode.classList.toggle('show', role === 'admin');
-
-    var univInput = document.getElementById('register_universitas');
-    var namaInstansiInput = document.getElementById('register_nama_instansi');
-    var jabatanInstansiInput = document.getElementById('register_jabatan_instansi');
-    var emailInstansiInput = document.getElementById('register_email_instansi');
-    var adminInput = document.getElementById('register_admin_code');
-    if (univInput) univInput.required = role === 'pelajar_peneliti';
-    [namaInstansiInput, jabatanInstansiInput, emailInstansiInput].forEach(function(input) {
-        if (input) input.required = role === 'instansi';
-    });
-    if (adminInput) adminInput.required = role === 'admin';
-
-    if (hint) {
-        if (role === 'pelajar_peneliti') hint.textContent = 'Pelajar/Peneliti wajib mengisi nama universitas/sekolah. Setelah daftar, akun langsung aktif untuk akses download.';
-        if (role === 'instansi') hint.textContent = 'Instansi wajib mengisi nama instansi/unit kerja, jabatan/posisi, dan email instansi/email dinas. Akun masuk status menunggu verifikasi admin sebelum bisa tambah/update data.';
-        if (role === 'admin') hint.textContent = 'Admin membutuhkan kode khusus, tetapi hak admin final tetap harus diverifikasi melalui Firestore.';
-    }
-};
-
-window.resetPasswordFromLogin = async function resetPasswordFromLogin() {
-    var email = (getInputValue('login_email') || prompt('Masukkan email akun WebGIS untuk reset password. Contoh: nama@gmail.com'));
-    email = String(email || '').trim().toLowerCase();
-    if (!email) return;
-
-    if (!isValidEmailFormat(email)) {
-        flashMessage('loginForm', 'Reset password membutuhkan email akun WebGIS yang valid.
-
-Contoh benar: nama@gmail.com
-Contoh salah: juna28
-
-Nama pendek seperti juna28 tidak bisa dipakai untuk reset password. Gunakan email lengkap.', true);
-        return;
-    }
-
-    try {
-        await sendPasswordResetEmail(auth, email);
-        flashMessage('loginForm', 'Link reset password sudah dikirim ke ' + email + '.
-
-Silakan cek Gmail/kotak masuk, lalu buat password WebGIS baru dari link tersebut.', false);
-    } catch (err) {
-        flashMessage('loginForm', firebaseFriendlyMessage(err, 'reset'), true);
-    }
-};
-
-window.firebaseLogout = async function firebaseLogout(event) {
-    if (event) event.preventDefault();
-    try { await signOut(auth); } catch (err) { console.warn(err); }
-    localStorage.removeItem(STORAGE_AUTH);
-    applyAccessUI({ loggedIn: false, username: 'Tamu', role: 'masyarakat' });
-    window.SIFORTA_LOGIN_ACTION_OCCURRED = false;
-    showAuthForm('login');
-    setLoginModalState(true);
+  const role = getInputValue('register_role') || 'pelajar_peneliti';
+  const univ = document.getElementById('fieldUniversitas');
+  const instansi = document.getElementById('fieldInstansi');
+  const adminCode = document.getElementById('fieldAdminCode');
+  const hint = document.getElementById('registerRoleHint');
+  if (univ) univ.classList.toggle('show', role === 'pelajar_peneliti');
+  if (instansi) instansi.classList.toggle('show', role === 'instansi');
+  if (adminCode) adminCode.classList.toggle('show', role === 'admin');
+  const univInput = document.getElementById('register_universitas');
+  const namaInstansiInput = document.getElementById('register_nama_instansi');
+  const jabatanInstansiInput = document.getElementById('register_jabatan_instansi');
+  const emailInstansiInput = document.getElementById('register_email_instansi');
+  const adminInput = document.getElementById('register_admin_code');
+  if (univInput) univInput.required = role === 'pelajar_peneliti';
+  [namaInstansiInput, jabatanInstansiInput, emailInstansiInput].forEach(input => { if (input) input.required = role === 'instansi'; });
+  if (adminInput) adminInput.required = role === 'admin';
+  if (hint) {
+    if (role === 'pelajar_peneliti') hint.textContent = 'Pelajar/Peneliti wajib mengisi nama universitas/sekolah.';
+    if (role === 'instansi') hint.textContent = 'Instansi mengisi unit kerja, jabatan/posisi, dan email instansi. Status awal menunggu verifikasi admin.';
+    if (role === 'admin') hint.textContent = 'Admin memerlukan kode khusus, tetapi aktivasi tetap diverifikasi melalui Firestore.';
+  }
 };
 
 async function loadUserProfile(user) {
-    var snap = await getDoc(doc(db, 'users', user.uid));
-    if (!snap.exists()) return null;
-    return snap.data();
+  const snap = await getDoc(doc(db, 'users', user.uid));
+  return snap.exists() ? snap.data() : null;
 }
 
 async function handleLogin(e) {
-    e.preventDefault();
-    var email = getInputValue('login_email').toLowerCase();
-    var password = getInputValue('password');
-    var remember = !!(document.getElementById('rememberMe') && document.getElementById('rememberMe').checked);
-
-    if (!email || !password) {
-        flashMessage('loginForm', 'Email akun WebGIS dan password harus diisi.
-
-Untuk login, gunakan email lengkap seperti nama@gmail.com, bukan nama pendek.', true);
-        return;
+  if (e && e.preventDefault) e.preventDefault();
+  const email = getInputValue('login_email').toLowerCase();
+  const password = getInputValue('password');
+  const remember = !!(document.getElementById('rememberMe') || {}).checked;
+  if (!email || !password) {
+    flashMessage('loginForm', 'Email akun WebGIS dan password harus diisi.\n\nGunakan email lengkap seperti nama@gmail.com, bukan nama pendek seperti juna28.', true);
+    return false;
+  }
+  if (!isValidEmailFormat(email)) {
+    flashMessage('loginForm', 'Format email belum benar.\n\nIsi kolom Email Akun WebGIS dengan email lengkap, contoh: nama@gmail.com. Nama pendek seperti juna28 tidak bisa dipakai untuk login.', true);
+    return false;
+  }
+  try {
+    await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence);
+    const result = await signInWithEmailAndPassword(auth, email, password);
+    const profile = await loadUserProfile(result.user);
+    if (!profile) {
+      flashMessage('loginForm', 'Login berhasil, tetapi data role belum dibuat di Firestore/users. Buat document users/' + result.user.uid + ' terlebih dahulu.', true);
+      return false;
     }
-    if (!isValidEmailFormat(email)) {
-        flashMessage('loginForm', 'Format email belum benar.
-
-Isi kolom Email Akun WebGIS dengan email lengkap, contoh: nama@gmail.com. Nama pendek seperti juna28 tidak bisa dipakai untuk login. Gunakan email lengkap.', true);
-        return;
-    }
-
-    try {
-        await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence);
-        var result = await signInWithEmailAndPassword(auth, email, password);
-        var profile = await loadUserProfile(result.user);
-        if (!profile) {
-            flashMessage('loginForm', 'Login berhasil, tetapi data role belum dibuat di Firestore/users. Buat document users/' + result.user.uid + ' terlebih dahulu.', true);
-            return;
-        }
-        var authData = {
-            loggedIn: true,
-            uid: result.user.uid,
-            email: result.user.email,
-            username: profile.username || profile.nama || result.user.email,
-            nama: profile.nama || profile.username || result.user.email,
-            role: normalizeRole(profile.role),
-            status: profile.status || 'aktif'
-        };
-        applyAccessUI(authData);
-        window.SIFORTA_LOGIN_ACTION_OCCURRED = true;
-        setLoginModalState(false);
-        try { speakWelcomeSiforta(true); } catch (err) {}
-        try { scrollToSection('sec-peta'); } catch (err) {}
-    } catch (err) {
-        flashMessage('loginForm', firebaseFriendlyMessage(err, 'login'), true);
-    }
+    const authData = {
+      loggedIn: true,
+      uid: result.user.uid,
+      email: result.user.email,
+      nama: profile.nama || result.user.email,
+      role: normalizeRole(profile.role),
+      status: profile.status || 'aktif'
+    };
+    window.applyAccessUI(authData);
+    window.SIFORTA_LOGIN_ACTION_OCCURRED = true;
+    sifortaSetLoginVisible(false);
+    try { window.speakWelcomeSiforta(true); } catch (err) {}
+    try { if (typeof scrollToSection === 'function') scrollToSection('sec-peta'); } catch (err) {}
+  } catch (err) {
+    flashMessage('loginForm', firebaseFriendlyMessage(err, 'login'), true);
+  }
+  return false;
 }
 
 async function handleRegister(e) {
-    e.preventDefault();
-    var requestedRole = getInputValue('register_role') || 'pelajar_peneliti';
-    var nama = getInputValue('register_nama');
-    var email = getInputValue('register_email').toLowerCase();
-    var password = getInputValue('register_password');
-    var confirm = getInputValue('register_password_confirm');
-    var universitas = getInputValue('register_universitas');
-    var namaInstansi = getInputValue('register_nama_instansi');
-    var jabatanInstansi = getInputValue('register_jabatan_instansi');
-    var emailInstansi = getInputValue('register_email_instansi').toLowerCase();
-    var adminCode = getInputValue('register_admin_code');
-
-    if (!nama || !email || !username || !password) {
-        flashMessage('registerForm', 'Nama, email, username, dan password wajib diisi.
-
-Catatan: email dipakai untuk login dan reset password, sedangkan username hanya nama tampilan.', true);
-        return;
-    }
-    if (!isValidEmailFormat(email)) {
-        flashMessage('registerForm', 'Format email akun WebGIS belum benar.
-
-Gunakan email lengkap, contoh: nama@gmail.com. Jangan isi dengan username seperti juna28.', true);
-        return;
-    }
-    if (password.length < 6) {
-        flashMessage('registerForm', 'Password minimal 6 karakter.', true);
-        return;
-    }
-    if (password !== confirm) {
-        flashMessage('registerForm', 'Konfirmasi password belum sama.', true);
-        return;
-    }
-    if (requestedRole === 'pelajar_peneliti' && !universitas) {
-        flashMessage('registerForm', 'Nama universitas/sekolah wajib diisi.', true);
-        return;
-    }
-    if (requestedRole === 'instansi' && (!namaInstansi || !jabatanInstansi || !emailInstansi)) {
-        flashMessage('registerForm', 'Nama instansi/unit kerja, jabatan/posisi, dan email instansi wajib diisi untuk akun instansi.', true);
-        return;
-    }
-    if (requestedRole === 'instansi' && !isValidEmailFormat(emailInstansi)) {
-        flashMessage('registerForm', 'Email Instansi / Email Dinas harus berupa alamat email lengkap. Contoh: nama@klaten.go.id atau nama@atrbpn.go.id.', true);
-        return;
-    }
-    if (requestedRole === 'admin' && adminCode !== ADMIN_INVITE_CODE) {
-        flashMessage('registerForm', 'Kode khusus admin tidak sesuai.', true);
-        return;
-    }
-
-    var finalRole = 'pelajar_peneliti';
-    var status = 'aktif';
-    if (requestedRole === 'instansi') {
-        finalRole = 'pending_instansi';
-        status = 'menunggu_verifikasi';
-    } else if (requestedRole === 'admin') {
-        finalRole = 'pending_admin';
-        status = 'menunggu_verifikasi_admin';
-    }
-
-    try {
-        var result = await createUserWithEmailAndPassword(auth, email, password);
-        await setDoc(doc(db, 'users', result.user.uid), {
-            uid: result.user.uid,
-            email: email,
-            nama: nama,
-            requestedRole: requestedRole,
-            role: finalRole,
-            status: status,
-            universitas: requestedRole === 'pelajar_peneliti' ? universitas : '',
-            namaInstansi: requestedRole === 'instansi' ? namaInstansi : '',
-            jabatanInstansi: requestedRole === 'instansi' ? jabatanInstansi : '',
-            emailInstansi: requestedRole === 'instansi' ? emailInstansi : '',
-            createdAt: serverTimestamp()
-        });
-
-        flashMessage('registerForm', 'Akun berhasil dibuat. Status: ' + labelFor(finalRole) + '.\n\nSimpan email akun WebGIS dan password Anda di browser/password manager. Demi keamanan, SIFORTA tidak mengirimkan password melalui email. Jika lupa password, gunakan menu Lupa password? untuk membuat password baru melalui email.', false);
-        applyAccessUI({ loggedIn: true, uid: result.user.uid, email: email, username: nama, nama: nama, role: finalRole, status: status });
-        window.SIFORTA_LOGIN_ACTION_OCCURRED = true;
-        setLoginModalState(false);
-        try { speakWelcomeSiforta(true); } catch (err) {}
-        try { scrollToSection('sec-peta'); } catch (err) {}
-    } catch (err) {
-        flashMessage('registerForm', firebaseFriendlyMessage(err, 'register'), true);
-    }
+  if (e && e.preventDefault) e.preventDefault();
+  const requestedRole = getInputValue('register_role') || 'pelajar_peneliti';
+  const nama = getInputValue('register_nama');
+  const email = getInputValue('register_email').toLowerCase();
+  const password = getInputValue('register_password');
+  const confirm = getInputValue('register_password_confirm');
+  const universitas = getInputValue('register_universitas');
+  const namaInstansi = getInputValue('register_nama_instansi');
+  const jabatanInstansi = getInputValue('register_jabatan_instansi');
+  const emailInstansi = getInputValue('register_email_instansi').toLowerCase();
+  const adminCode = getInputValue('register_admin_code');
+  if (!nama || !email || !password) {
+    flashMessage('registerForm', 'Nama lengkap, email akun WebGIS, dan password wajib diisi.\n\nEmail dipakai untuk login dan reset password. Nama lengkap hanya dipakai sebagai identitas tampilan.', true);
+    return false;
+  }
+  if (!isValidEmailFormat(email)) {
+    flashMessage('registerForm', 'Format email akun WebGIS belum benar.\n\nGunakan email lengkap, contoh: nama@gmail.com. Jangan isi dengan nama pendek seperti juna28.', true);
+    return false;
+  }
+  if (password.length < 6) { flashMessage('registerForm', 'Password minimal 6 karakter.', true); return false; }
+  if (password !== confirm) { flashMessage('registerForm', 'Konfirmasi password belum sama.', true); return false; }
+  if (requestedRole === 'pelajar_peneliti' && !universitas) { flashMessage('registerForm', 'Nama universitas/sekolah wajib diisi.', true); return false; }
+  if (requestedRole === 'instansi' && (!namaInstansi || !jabatanInstansi || !emailInstansi)) {
+    flashMessage('registerForm', 'Nama instansi/unit kerja, jabatan/posisi, dan email instansi wajib diisi untuk akun instansi.', true); return false;
+  }
+  if (requestedRole === 'instansi' && !isValidEmailFormat(emailInstansi)) {
+    flashMessage('registerForm', 'Email Instansi / Email Dinas harus berupa alamat email lengkap. Contoh: nama@klaten.go.id atau nama@atrbpn.go.id.', true); return false;
+  }
+  if (requestedRole === 'admin' && adminCode !== ADMIN_INVITE_CODE) {
+    flashMessage('registerForm', 'Kode khusus admin tidak sesuai.', true); return false;
+  }
+  let finalRole = 'pelajar_peneliti';
+  let status = 'aktif';
+  if (requestedRole === 'instansi') { finalRole = 'pending_instansi'; status = 'menunggu_verifikasi'; }
+  if (requestedRole === 'admin') { finalRole = 'pending_admin'; status = 'menunggu_verifikasi_admin'; }
+  try {
+    const result = await createUserWithEmailAndPassword(auth, email, password);
+    await setDoc(doc(db, 'users', result.user.uid), {
+      uid: result.user.uid,
+      email,
+      nama,
+      requestedRole,
+      role: finalRole,
+      status,
+      universitas: requestedRole === 'pelajar_peneliti' ? universitas : '',
+      namaInstansi: requestedRole === 'instansi' ? namaInstansi : '',
+      jabatanInstansi: requestedRole === 'instansi' ? jabatanInstansi : '',
+      emailInstansi: requestedRole === 'instansi' ? emailInstansi : '',
+      createdAt: serverTimestamp()
+    });
+    flashMessage('registerForm', 'Akun berhasil dibuat. Status: ' + labelFor(finalRole) + '.\n\nSimpan email akun WebGIS dan password Anda di browser/password manager. Demi keamanan, SIFORTA tidak mengirimkan password melalui email. Jika lupa password, gunakan menu Lupa password? untuk membuat password baru melalui email.', false);
+    window.applyAccessUI({ loggedIn: true, uid: result.user.uid, email, nama, role: finalRole, status });
+    window.SIFORTA_LOGIN_ACTION_OCCURRED = true;
+    sifortaSetLoginVisible(false);
+    try { window.speakWelcomeSiforta(true); } catch (err) {}
+    try { if (typeof scrollToSection === 'function') scrollToSection('sec-peta'); } catch (err) {}
+  } catch (err) {
+    flashMessage('registerForm', firebaseFriendlyMessage(err, 'register'), true);
+  }
+  return false;
 }
 
+window.resetPasswordFromLogin = async function resetPasswordFromLogin() {
+  let email = getInputValue('login_email').toLowerCase();
+  if (!email) email = String(prompt('Masukkan email akun WebGIS Anda. Contoh: nama@gmail.com') || '').trim().toLowerCase();
+  if (!email) return;
+  if (!isValidEmailFormat(email)) {
+    flashMessage('loginForm', 'Reset password membutuhkan email akun WebGIS yang valid.\n\nContoh benar: nama@gmail.com\nContoh salah: juna28\n\nNama pendek seperti juna28 tidak bisa dipakai untuk reset password.', true);
+    return;
+  }
+  try {
+    await sendPasswordResetEmail(auth, email);
+    flashMessage('loginForm', 'Link reset password sudah dikirim ke ' + email + '.\n\nSilakan cek Gmail/kotak masuk, lalu buat password WebGIS baru dari link tersebut.', false);
+  } catch (err) {
+    flashMessage('loginForm', firebaseFriendlyMessage(err, 'reset'), true);
+  }
+};
+
+window.firebaseLogout = async function firebaseLogout(event) {
+  if (event && event.preventDefault) event.preventDefault();
+  try { await signOut(auth); } catch (err) {}
+  try { localStorage.removeItem(STORAGE_AUTH); } catch (err) {}
+  window.SIFORTA_LOGIN_ACTION_OCCURRED = false;
+  window.applyAccessUI({ loggedIn: false, nama: 'Masyarakat Umum', role: 'masyarakat' });
+  showAuthForm('login');
+  sifortaSetLoginVisible(true);
+};
+
 function setupForms() {
-    var guestForm = document.querySelector('.guest-form');
-    if (guestForm) {
-        guestForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            applyAccessUI({ loggedIn: false, username: 'Tamu', nama: 'Masyarakat Umum', role: 'masyarakat' });
-            window.SIFORTA_LOGIN_ACTION_OCCURRED = true;
-            try { speakWelcomeSiforta(true); } catch (err) {}
-            setLoginModalState(false);
-            try { scrollToSection('sec-peta'); } catch (err) {}
-        });
-    }
+  const guestForm = document.querySelector('.guest-form');
+  if (guestForm) guestForm.addEventListener('submit', window.sifortaEnterGuest);
+  const guestBtn = document.querySelector('.simple-login-guest');
+  if (guestBtn) guestBtn.addEventListener('click', window.sifortaEnterGuest);
+  const loginForm = document.getElementById('loginForm');
+  if (loginForm) loginForm.addEventListener('submit', handleLogin);
+  const registerForm = document.getElementById('registerForm');
+  if (registerForm) registerForm.addEventListener('submit', handleRegister);
 
-    var loginForm = document.getElementById('loginForm');
-    if (loginForm) loginForm.addEventListener('submit', handleLogin);
-
-    var registerForm = document.getElementById('registerForm');
-    if (registerForm) registerForm.addEventListener('submit', handleRegister);
-
-    var feedbackForm = document.querySelector('form input[name="feedback_submit"]');
-    if (feedbackForm && feedbackForm.form) {
-        feedbackForm.form.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            var user = auth.currentUser;
-            if (!user) {
-                alert('Silakan login sebagai Pelajar/Peneliti, Instansi, atau Admin untuk mengirim kritik/saran terverifikasi. Masyarakat dapat tetap melihat peta sebagai tamu.');
-                return;
-            }
-            var form = e.currentTarget;
-            var item = {
-                nama: (form.querySelector('[name="feedback_nama"]') || {}).value || '',
-                email: user.email,
-                kategori: (form.querySelector('[name="feedback_kategori"]') || {}).value || 'Umum',
-                pesan: (form.querySelector('[name="feedback_pesan"]') || {}).value || '',
-                uid: user.uid,
-                createdAt: serverTimestamp()
-            };
-            if (!item.nama.trim() || !item.pesan.trim()) {
-                alert('Nama dan pesan wajib diisi.');
-                return;
-            }
-            try {
-                await addDoc(collection(db, 'feedback'), item);
-                form.reset();
-                alert('Kritik/saran berhasil dikirim ke Firestore.');
-            } catch (err) {
-                alert('Gagal mengirim kritik/saran: ' + (err.message || err));
-            }
-        });
-    }
+  const feedbackForm = document.querySelector('form input[name="feedback_submit"]');
+  if (feedbackForm && feedbackForm.form) {
+    feedbackForm.form.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const user = auth.currentUser;
+      if (!user) { alert('Silakan login sebagai Pelajar/Peneliti, Instansi, atau Admin untuk mengirim kritik/saran terverifikasi.'); return; }
+      const form = e.currentTarget;
+      const item = {
+        nama: (form.querySelector('[name="feedback_nama"]') || {}).value || '',
+        email: user.email,
+        kategori: (form.querySelector('[name="feedback_kategori"]') || {}).value || 'Umum',
+        pesan: (form.querySelector('[name="feedback_pesan"]') || {}).value || '',
+        uid: user.uid,
+        createdAt: serverTimestamp()
+      };
+      if (!item.nama.trim() || !item.pesan.trim()) { alert('Nama dan pesan wajib diisi.'); return; }
+      try { await addDoc(collection(db, 'feedback'), item); form.reset(); alert('Kritik/saran berhasil dikirim.'); }
+      catch (err) { alert('Gagal mengirim kritik/saran: ' + (err.message || err)); }
+    });
+  }
 }
 
 onAuthStateChanged(auth, async function(user) {
-    if (!user) {
-        var local = null;
-        try { local = JSON.parse(localStorage.getItem(STORAGE_AUTH) || 'null'); } catch (err) {}
-        if (!local || !local.loggedIn) {
-            applyAccessUI({ loggedIn: false, username: 'Tamu', role: 'masyarakat' });
-        }
-        return;
+  if (!user) {
+    window.applyAccessUI({ loggedIn: false, nama: 'Masyarakat Umum', role: 'masyarakat' });
+    if (!window.SIFORTA_LOGIN_ACTION_OCCURRED) sifortaSetLoginVisible(true);
+    return;
+  }
+  try {
+    const profile = await loadUserProfile(user);
+    if (profile) {
+      window.applyAccessUI({
+        loggedIn: true,
+        uid: user.uid,
+        email: user.email,
+        nama: profile.nama || user.email,
+        role: normalizeRole(profile.role),
+        status: profile.status || 'aktif'
+      });
     }
-
-    try {
-        var profile = await loadUserProfile(user);
-        if (profile) {
-            applyAccessUI({
-                loggedIn: true,
-                uid: user.uid,
-                email: user.email,
-                username: profile.username || profile.nama || user.email,
-                nama: profile.nama || profile.username || user.email,
-                role: normalizeRole(profile.role),
-                status: profile.status || 'aktif'
-            });
-            // Kalau session Firebase masih tersimpan dari kunjungan lama, jangan langsung menutup login.
-            // Pengguna tetap diarahkan melihat menu login terlebih dahulu saat membuka link website.
-            if (window.SIFORTA_LOGIN_ACTION_OCCURRED) {
-                setLoginModalState(false);
-            } else if (window.SIFORTA_FORCE_LOGIN_ON_LOAD) {
-                showAuthForm('login');
-                setLoginModalState(true);
-            }
-        }
-    } catch (err) {
-        console.warn('Gagal membaca profil user:', err);
-    }
+  } catch (err) { console.warn('Gagal membaca profil user:', err); }
+  if (!window.SIFORTA_LOGIN_ACTION_OCCURRED) {
+    showAuthForm('login');
+    sifortaSetLoginVisible(true);
+  }
 });
 
 document.addEventListener('DOMContentLoaded', function() {
-    setupForms();
-    updateRegisterRoleFields();
-    applyAccessUI({ loggedIn: false, username: 'Tamu', role: 'masyarakat' });
-
-    // Saat link website dibuka, tampilkan menu login terlebih dahulu.
-    // Ini tetap dipaksa walaupun browser masih menyimpan session/login lama.
-    function forceInitialLoginModal() {
-        if (!window.SIFORTA_LOGIN_ACTION_OCCURRED && window.SIFORTA_FORCE_LOGIN_ON_LOAD) {
-            showAuthForm('login');
-            setLoginModalState(true);
-        }
-    }
-    forceInitialLoginModal();
-    setTimeout(forceInitialLoginModal, 350);
-    setTimeout(forceInitialLoginModal, 1200);
+  setupForms();
+  window.updateRegisterRoleFields();
+  window.applyAccessUI({ loggedIn: false, nama: 'Masyarakat Umum', role: 'masyarakat' });
+  showAuthForm('login');
+  sifortaSetLoginVisible(true);
 });
 </script>
-
-
 </body>
 </html>
