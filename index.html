@@ -6454,6 +6454,38 @@ body.has-login-modal .main {
 }
 .login-first-reminder b { color: var(--green-800); }
 
+
+
+/* ============================================================
+   PATCH V11: FIX SCROLL SETELAH LOGIN/TAMU
+   ============================================================ */
+html, body {
+    overflow-x: hidden !important;
+}
+body:not(.has-login-modal),
+body.siforta-site-open {
+    overflow-y: auto !important;
+    height: auto !important;
+}
+body:not(.has-login-modal) .navbar,
+body:not(.has-login-modal) .main,
+body.siforta-site-open .navbar,
+body.siforta-site-open .main {
+    filter: none !important;
+    pointer-events: auto !important;
+    user-select: auto !important;
+}
+body:not(.has-login-modal) #loginModal,
+body.siforta-site-open #loginModal {
+    display: none !important;
+}
+.main {
+    overflow: visible !important;
+    height: auto !important;
+}
+.page-section, .section-body {
+    overflow: visible !important;
+}
 </style>
 
 <script>
@@ -7749,8 +7781,18 @@ function showServicePanel(name) {
 function setLoginModalState(show) {
     var modal = document.getElementById('loginModal');
     if (!modal) return;
-    modal.style.display = show ? 'flex' : 'none';
-    document.body.classList.toggle('has-login-modal', show);
+    if (show) {
+        document.body.classList.remove('siforta-site-open');
+        document.body.classList.add('has-login-modal');
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    } else {
+        modal.style.display = 'none';
+        document.body.classList.remove('has-login-modal');
+        document.body.classList.add('siforta-site-open');
+        document.body.style.overflow = '';
+        document.documentElement.style.overflowY = 'auto';
+    }
 }
 
 function openLogin() {
@@ -9287,8 +9329,21 @@ window.SIFORTA_LOGIN_ACTION_OCCURRED = false;
 
 function sifortaSetLoginVisible(show) {
     var modal = document.getElementById('loginModal');
-    if (modal) modal.style.display = show ? 'flex' : 'none';
-    document.body.classList.toggle('has-login-modal', !!show);
+    if (show) {
+        document.body.classList.remove('siforta-site-open');
+        document.body.classList.add('has-login-modal');
+        if (modal) modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    } else {
+        if (modal) modal.style.display = 'none';
+        document.body.classList.remove('has-login-modal');
+        document.body.classList.add('siforta-site-open');
+        document.body.style.overflow = '';
+        document.documentElement.style.overflowY = 'auto';
+        if (typeof window.updateActiveNavOnScroll === 'function') {
+            setTimeout(window.updateActiveNavOnScroll, 80);
+        }
+    }
 }
 
 window.openLogin = function openLogin() {
@@ -9335,6 +9390,7 @@ window.sifortaEnterGuest = function sifortaEnterGuest(ev) {
             window.applyAccessUI({ loggedIn: false, nama: 'Masyarakat Umum', role: 'masyarakat', status: 'aktif' });
         }
     } catch (err) {}
+    try { if (typeof window.recordGuestVisitFirebase === 'function') window.recordGuestVisitFirebase(); } catch (err) {}
     sifortaSetLoginVisible(false);
     try { window.speakWelcomeSiforta(true); } catch (err) {}
     try { if (typeof scrollToSection === 'function') scrollToSection('sec-peta'); } catch (err) {}
@@ -9357,12 +9413,13 @@ window.addEventListener('load', function() {
 </script>
 
 <script type="module">
-// SIFORTA FINAL V10 - Firebase Auth bersih tanpa username dan tanpa POST ke GitHub Pages.
+// SIFORTA FINAL V12 - Admin akses download/upload + pencatatan tamu Firebase.
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import {
   getAuth,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  signInAnonymously,
   sendPasswordResetEmail,
   signOut,
   onAuthStateChanged,
@@ -9453,42 +9510,57 @@ function firebaseFriendlyMessage(err, context) {
   return 'Terjadi kendala: ' + ((err && err.message) ? err.message : String(err || 'Tidak diketahui'));
 }
 
+function prepareDriveAccessLinks() {
+  const driveLinks = Array.from(document.querySelectorAll('a[href*="drive.google.com"]'));
+  driveLinks.forEach((link) => {
+    if (!link.dataset.originalHref) link.dataset.originalHref = link.getAttribute('href') || '';
+    if (!link.dataset.originalHtml) link.dataset.originalHtml = link.innerHTML || link.textContent || '';
+    const txt = (link.dataset.originalHtml || link.textContent || '').toLowerCase();
+    const panel = link.closest('[data-service-panel]');
+    const panelName = panel ? String(panel.getAttribute('data-service-panel') || '').toLowerCase() : '';
+    if (!link.dataset.accessType) {
+      if (panelName === 'download' || txt.includes('download')) link.dataset.accessType = 'download';
+      else if (panelName === 'upload' || txt.includes('tambah') || txt.includes('update') || txt.includes('upload')) link.dataset.accessType = 'upload';
+    }
+  });
+}
+
+function lockServiceLink(link, message) {
+  if (!link.dataset.originalHref) link.dataset.originalHref = link.getAttribute('href') || '';
+  if (!link.dataset.originalHtml) link.dataset.originalHtml = link.innerHTML || link.textContent || '';
+  link.removeAttribute('href');
+  link.classList.add('locked');
+  link.style.pointerEvents = 'none';
+  link.setAttribute('aria-disabled', 'true');
+  link.textContent = message;
+}
+
+function unlockServiceLink(link, iconHtml) {
+  if (link.dataset.originalHref) link.setAttribute('href', link.dataset.originalHref);
+  link.classList.remove('locked');
+  link.style.pointerEvents = '';
+  link.removeAttribute('aria-disabled');
+  link.innerHTML = link.dataset.originalHtml || iconHtml;
+}
+
 function setDownloadAccess(show) {
-  const downloadLinks = Array.from(document.querySelectorAll('a[href*="drive.google.com"]'));
-  downloadLinks.forEach((link) => {
-    const text = (link.textContent || '').toLowerCase();
-    const isDownload = text.includes('download');
-    const isUpload = text.includes('tambah') || text.includes('update') || text.includes('upload');
-    if (isDownload && !show) {
-      link.dataset.originalHref = link.dataset.originalHref || link.getAttribute('href') || '';
-      link.removeAttribute('href');
-      link.classList.add('locked');
-      link.style.pointerEvents = 'none';
-      link.textContent = 'Bagian ini baru bisa didownload ketika login sebagai Pelajar/Peneliti atau Instansi yang telah terverifikasi.';
-    } else if (isDownload && show && link.dataset.originalHref) {
-      link.setAttribute('href', link.dataset.originalHref);
-      link.classList.remove('locked');
-      link.style.pointerEvents = '';
-      link.innerHTML = '<i class="ti ti-download"></i> Download Data';
+  prepareDriveAccessLinks();
+  Array.from(document.querySelectorAll('a[data-access-type="download"]')).forEach((link) => {
+    if (!show) {
+      lockServiceLink(link, 'Bagian ini baru bisa didownload ketika login sebagai Pelajar/Peneliti, Instansi terverifikasi, atau Admin.');
+    } else {
+      unlockServiceLink(link, '<i class="ti ti-download"></i> Download Data');
     }
   });
 }
 
 function setUploadAccess(show) {
-  Array.from(document.querySelectorAll('a[href*="drive.google.com"]')).forEach((link) => {
-    const text = (link.textContent || '').toLowerCase();
-    const isUpload = text.includes('tambah') || text.includes('update') || text.includes('upload');
-    if (isUpload && !show) {
-      link.dataset.originalHref = link.dataset.originalHref || link.getAttribute('href') || '';
-      link.removeAttribute('href');
-      link.classList.add('locked');
-      link.style.pointerEvents = 'none';
-      link.textContent = 'Update data hanya tersedia untuk Instansi terverifikasi atau Admin.';
-    } else if (isUpload && show && link.dataset.originalHref) {
-      link.setAttribute('href', link.dataset.originalHref);
-      link.classList.remove('locked');
-      link.style.pointerEvents = '';
-      link.innerHTML = '<i class="ti ti-upload"></i> Tambah Data';
+  prepareDriveAccessLinks();
+  Array.from(document.querySelectorAll('a[data-access-type="upload"]')).forEach((link) => {
+    if (!show) {
+      lockServiceLink(link, 'Update data hanya tersedia untuk Instansi terverifikasi atau Admin.');
+    } else {
+      unlockServiceLink(link, '<i class="ti ti-upload"></i> Tambah Data');
     }
   });
 }
@@ -9540,6 +9612,28 @@ async function loadUserProfile(user) {
   const snap = await getDoc(doc(db, 'users', user.uid));
   return snap.exists() ? snap.data() : null;
 }
+
+async function recordGuestVisitFirebase() {
+  try {
+    let current = auth.currentUser;
+    if (!current || !current.isAnonymous) {
+      try { await signOut(auth); } catch (err) {}
+      const anonResult = await signInAnonymously(auth);
+      current = anonResult.user;
+    }
+    await addDoc(collection(db, 'guest_visits'), {
+      uid: current ? current.uid : null,
+      role: 'masyarakat',
+      status: 'tamu',
+      page: window.location.href,
+      userAgent: navigator.userAgent || '',
+      visitedAt: serverTimestamp()
+    });
+  } catch (err) {
+    console.warn('Pencatatan tamu ke Firebase gagal. Pastikan Anonymous Auth aktif dan Rules guest_visits sudah benar.', err);
+  }
+}
+window.recordGuestVisitFirebase = recordGuestVisitFirebase;
 
 async function handleLogin(e) {
   if (e && e.preventDefault) e.preventDefault();
@@ -9734,6 +9828,76 @@ document.addEventListener('DOMContentLoaded', function() {
   showAuthForm('login');
   sifortaSetLoginVisible(true);
 });
+</script>
+
+<script>
+// SIFORTA V12 - pengaman scroll dan pencatatan tamu: setelah login/tamu/daftar, halaman wajib bisa discroll.
+(function() {
+    function unlockPageScroll() {
+        var modal = document.getElementById('loginModal');
+        if (modal) modal.style.display = 'none';
+        document.body.classList.remove('has-login-modal');
+        document.body.classList.add('siforta-site-open');
+        document.body.style.overflow = '';
+        document.documentElement.style.overflowY = 'auto';
+        document.documentElement.style.height = 'auto';
+        document.body.style.height = 'auto';
+        var main = document.getElementById('mainScroll');
+        if (main) {
+            main.style.overflow = 'visible';
+            main.style.height = 'auto';
+        }
+    }
+    function lockPageLogin() {
+        var modal = document.getElementById('loginModal');
+        document.body.classList.remove('siforta-site-open');
+        document.body.classList.add('has-login-modal');
+        document.body.style.overflow = 'hidden';
+        if (modal) modal.style.display = 'flex';
+    }
+    window.sifortaUnlockPageScroll = unlockPageScroll;
+    window.sifortaSetLoginVisible = function(show) {
+        if (show) lockPageLogin();
+        else unlockPageScroll();
+    };
+    window.openLogin = function() {
+        window.SIFORTA_LOGIN_ACTION_OCCURRED = false;
+        lockPageLogin();
+        if (typeof window.showAuthForm === 'function') window.showAuthForm('login');
+    };
+    window.closeLogin = function() {
+        if (!window.SIFORTA_LOGIN_ACTION_OCCURRED) return;
+        unlockPageScroll();
+    };
+    var oldGuest = window.sifortaEnterGuest;
+    window.sifortaEnterGuest = function(ev) {
+        if (ev && ev.preventDefault) ev.preventDefault();
+        window.SIFORTA_LOGIN_ACTION_OCCURRED = true;
+        try {
+            if (typeof window.applyAccessUI === 'function') {
+                window.applyAccessUI({ loggedIn: false, nama: 'Masyarakat Umum', role: 'masyarakat', status: 'aktif' });
+            }
+        } catch (err) {}
+        try { if (typeof window.recordGuestVisitFirebase === 'function') window.recordGuestVisitFirebase(); } catch (err) {}
+        unlockPageScroll();
+        try { if (typeof window.speakWelcomeSiforta === 'function') window.speakWelcomeSiforta(true); } catch (err) {}
+        try { if (typeof scrollToSection === 'function') scrollToSection('sec-peta'); } catch (err) {}
+        return false;
+    };
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.simple-login-guest').forEach(function(btn) {
+            btn.addEventListener('click', window.sifortaEnterGuest);
+        });
+        document.querySelectorAll('.guest-form').forEach(function(form) {
+            form.addEventListener('submit', window.sifortaEnterGuest);
+        });
+    });
+    window.addEventListener('click', function() {
+        if (window.SIFORTA_LOGIN_ACTION_OCCURRED && document.body.classList.contains('has-login-modal')) {
+            setTimeout(unlockPageScroll, 50);
+        }
+    }, true);
+})();
 </script>
 </body>
 </html>
