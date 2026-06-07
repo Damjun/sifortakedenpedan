@@ -6370,6 +6370,59 @@ body.has-login-modal .main {
         margin-top: 66px !important;
     }
 }
+
+/* ============================================================
+   FINAL LOGIN GUIDANCE PATCH - pesan jelas untuk email, username, dan error
+   ============================================================ */
+.auth-guidance-box {
+    margin: 0 0 14px;
+    padding: 14px 15px;
+    border-radius: 16px;
+    background: linear-gradient(180deg, #f3fbf6, #ffffff);
+    border: 1px solid rgba(42,138,82,0.18);
+    color: var(--text-mid);
+    font-size: 12.4px;
+    line-height: 1.6;
+}
+.auth-guidance-box strong {
+    display: block;
+    color: var(--green-900);
+    font-size: 13px;
+    margin-bottom: 6px;
+}
+.auth-guidance-box ul {
+    margin: 0;
+    padding-left: 18px;
+}
+.auth-guidance-box li { margin: 3px 0; }
+.auth-inline-note {
+    display: block;
+    margin: -8px 0 12px;
+    padding: 9px 11px;
+    border-radius: 12px;
+    background: rgba(224,245,234,0.68);
+    border: 1px solid rgba(42,138,82,0.13);
+    color: #4f6f59;
+    font-size: 11.7px;
+    line-height: 1.5;
+    font-weight: 700;
+}
+.auth-inline-note b { color: var(--green-900); }
+.auth-message {
+    white-space: pre-line;
+    line-height: 1.55;
+}
+.login-error.auth-message {
+    background: #fff7ed;
+    color: #9a3412;
+    border: 1px solid #fed7aa;
+}
+.login-error.auth-message.success {
+    background: #ecfdf3 !important;
+    color: #027a48 !important;
+    border: 1px solid #abefc6 !important;
+}
+
 </style>
 
 <script>
@@ -7152,7 +7205,18 @@ window.addEventListener('DOMContentLoaded', function() {
                 <a href="https://heyzine.com/flip-book/a199852d59.html" target="_blank" rel="noopener">
                     <i class="ti ti-book"></i> Panduan Penggunaan SIFORTA
                 </a>
-                <span>Buka majalah panduan penggunaan WebGIS Siforta.</span>
+                <span>Buka panduan sebelum masuk agar alur akun, peta, dan layanan data lebih jelas.</span>
+            </div>
+
+            <div class="auth-guidance-box" aria-label="Petunjuk login SIFORTA">
+                <strong>Petunjuk singkat sebelum masuk</strong>
+                <ul>
+                    <li><b>Masyarakat/Tamu</b> tidak perlu akun. Klik tombol “Masuk sebagai Masyarakat / Tamu”.</li>
+                    <li><b>Pelajar/Peneliti, Instansi, dan Admin</b> masuk memakai <b>email akun WebGIS</b>, bukan username.</li>
+                    <li><b>Username</b> hanya nama tampilan saat membuat akun. Contoh yang benar untuk login: <b>nama@gmail.com</b>, bukan <b>juna28</b>.</li>
+                    <li>Kalau email sudah pernah didaftarkan, jangan buat akun ulang. Gunakan menu <b>Masuk</b> atau <b>Lupa password?</b>.</li>
+                    <li>Demi keamanan, password tidak dikirim ke email. Email hanya dipakai untuk link reset password jika lupa.</li>
+                </ul>
             </div>
         
             <div class="simple-login-tabs" aria-label="Pilihan form autentikasi">
@@ -7176,11 +7240,12 @@ window.addEventListener('DOMContentLoaded', function() {
                     </select>
                 </div>
 
-                <label class="login-label" for="username">Email Akun WebGIS</label>
+                <label class="login-label" for="username">Email Akun WebGIS <span style="color:#9a3412;">(bukan username)</span></label>
                 <div class="login-input-wrap">
                     <i class="ti ti-mail"></i>
-                    <input type="email" id="username" name="username" placeholder="contoh: nama@gmail.com" autocomplete="username" required>
+                    <input type="email" id="username" name="username" placeholder="contoh: nama@gmail.com, bukan juna28" autocomplete="email" inputmode="email" required>
                 </div>
+                <span class="auth-inline-note">Gunakan alamat email lengkap yang dipakai saat daftar. <b>Username tampilan tidak bisa dipakai untuk login atau reset password.</b></span>
 
                 <label class="login-label" for="password">Password Website</label>
                 <div class="login-input-wrap">
@@ -7218,17 +7283,19 @@ window.addEventListener('DOMContentLoaded', function() {
                     <input type="text" id="register_nama" name="register_nama" placeholder="Nama lengkap pengguna" autocomplete="name" required>
                 </div>
 
-                <label class="login-label" for="register_email">Email / Gmail</label>
+                <label class="login-label" for="register_email">Email Akun WebGIS <span style="color:#9a3412;">(1 email = 1 akun)</span></label>
                 <div class="login-input-wrap">
                     <i class="ti ti-mail"></i>
-                    <input type="email" id="register_email" name="register_email" placeholder="contoh: nama@gmail.com" autocomplete="email" required>
+                    <input type="email" id="register_email" name="register_email" placeholder="contoh: nama@gmail.com" autocomplete="email" inputmode="email" required>
                 </div>
+                <span class="auth-inline-note">Email ini dipakai untuk login dan reset password. Jika email sudah pernah terdaftar, gunakan menu <b>Masuk</b> atau <b>Lupa password?</b>, bukan membuat akun baru.</span>
 
                 <label class="login-label" for="register_username">Username Tampilan</label>
                 <div class="login-input-wrap">
                     <i class="ti ti-user-plus"></i>
-                    <input type="text" id="register_username" name="register_username" placeholder="Buat username tampilan" autocomplete="username" required>
+                    <input type="text" id="register_username" name="register_username" placeholder="Contoh: juna28" autocomplete="username" required>
                 </div>
+                <span class="auth-inline-note">Username hanya untuk nama tampilan/profil, bukan untuk login. Login tetap memakai email akun WebGIS.</span>
 
                 <div id="fieldUniversitas" class="auth-extra-field show">
                     <label class="login-label" for="register_universitas">Nama Universitas / Sekolah</label>
@@ -7279,6 +7346,14 @@ window.addEventListener('DOMContentLoaded', function() {
                     <i class="ti ti-lock-check"></i>
                     <input type="password" id="register_password_confirm" name="register_password_confirm" placeholder="Ulangi password" autocomplete="new-password" required>
                     <button type="button" class="password-eye" onclick="togglePasswordInput('register_password_confirm', this)">Lihat</button>
+                </div>
+                <div class="auth-guidance-box" aria-label="Catatan keamanan password">
+                    <strong>Catatan keamanan akun</strong>
+                    <ul>
+                        <li>Simpan <b>email akun WebGIS</b> dan password di browser/password manager setelah membuat akun.</li>
+                        <li>SIFORTA tidak mengirim, menampilkan, atau menyimpan password dalam bentuk yang bisa dibaca admin.</li>
+                        <li>Jika lupa password, gunakan menu <b>Lupa password?</b> untuk menerima link reset melalui email.</li>
+                    </ul>
                 </div>
 
                 <button type="submit" class="simple-login-submit">BUAT AKUN</button>
@@ -9306,17 +9381,64 @@ function flashMessage(formId, message, isError) {
     if (!form) return;
     var cls = formId === 'loginForm' ? 'firebase-login-message' : 'firebase-register-message';
     var box = form.querySelector('.' + cls) || document.createElement('div');
-    box.className = 'login-error auth-message ' + cls;
+    box.className = 'login-error auth-message ' + cls + (isError ? '' : ' success');
     box.style.display = 'block';
-    box.style.background = isError ? '' : 'rgba(16,185,129,.12)';
-    box.style.color = isError ? '' : '#047857';
     box.textContent = message;
     if (!box.parentNode) form.insertBefore(box, form.firstChild);
+    try { box.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (err) {}
 }
 
 function getInputValue(id) {
     var el = document.getElementById(id);
     return el ? String(el.value || '').trim() : '';
+}
+
+function isValidEmailFormat(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || '').trim());
+}
+
+function firebaseFriendlyMessage(err, context) {
+    var raw = String((err && (err.code || err.message)) || err || '');
+    var lower = raw.toLowerCase();
+
+    if (lower.includes('auth/invalid-email')) {
+        return 'Format email belum benar.
+
+Isi Email Akun WebGIS dengan alamat email lengkap, contoh: nama@gmail.com. Username seperti juna28 tidak bisa dipakai untuk login atau reset password.';
+    }
+    if (lower.includes('auth/email-already-in-use')) {
+        return 'Email ini sudah pernah terdaftar.
+
+Silakan kembali ke menu Masuk dan login memakai email tersebut. Jika lupa password, klik Lupa password? untuk memperbarui sandi melalui Gmail/email.';
+    }
+    if (lower.includes('auth/user-not-found')) {
+        return 'Email ini belum terdaftar sebagai akun WebGIS.
+
+Periksa kembali penulisan email. Jika belum punya akun, pilih Buat Akun. Jika hanya ingin melihat peta, pilih Masuk sebagai Masyarakat / Tamu.';
+    }
+    if (lower.includes('auth/wrong-password') || lower.includes('auth/invalid-credential') || lower.includes('auth/invalid-login-credentials')) {
+        return 'Email atau password WebGIS tidak cocok.
+
+Pastikan email yang diisi adalah email lengkap yang dipakai saat daftar, bukan username. Jika lupa password, klik Lupa password? untuk reset melalui Gmail/email.';
+    }
+    if (lower.includes('auth/weak-password')) {
+        return 'Password terlalu pendek. Gunakan minimal 6 karakter.';
+    }
+    if (lower.includes('auth/network-request-failed')) {
+        return 'Koneksi internet bermasalah. Periksa jaringan, lalu coba lagi.';
+    }
+    if (lower.includes('permission-denied') || lower.includes('insufficient permissions')) {
+        return 'Akses ditolak oleh database.
+
+Kemungkinan data role user belum dibuat atau rules Firestore belum sesuai. Hubungi admin/pengelola SIFORTA.';
+    }
+    if (context === 'reset') {
+        return 'Reset password belum berhasil. Pastikan email yang diisi adalah email akun WebGIS yang valid dan sudah terdaftar.';
+    }
+    if (context === 'register') {
+        return 'Pendaftaran belum berhasil. Periksa kembali email, password, dan data wajib. Jika email sudah terdaftar, gunakan menu Masuk atau Lupa password?.';
+    }
+    return 'Terjadi kendala. Periksa kembali data yang diisi, lalu coba lagi.';
 }
 
 window.updateRegisterRoleFields = function updateRegisterRoleFields() {
@@ -9349,13 +9471,27 @@ window.updateRegisterRoleFields = function updateRegisterRoleFields() {
 };
 
 window.resetPasswordFromLogin = async function resetPasswordFromLogin() {
-    var email = getInputValue('username') || prompt('Masukkan email akun WebGIS untuk reset password:');
+    var email = (getInputValue('username') || prompt('Masukkan email akun WebGIS untuk reset password. Contoh: nama@gmail.com'));
+    email = String(email || '').trim().toLowerCase();
     if (!email) return;
+
+    if (!isValidEmailFormat(email)) {
+        flashMessage('loginForm', 'Reset password membutuhkan email akun WebGIS yang valid.
+
+Contoh benar: nama@gmail.com
+Contoh salah: juna28
+
+Username tidak bisa dipakai untuk reset password.', true);
+        return;
+    }
+
     try {
         await sendPasswordResetEmail(auth, email);
-        alert('Link reset password sudah dikirim. Silakan cek Gmail/kotak masuk.');
+        flashMessage('loginForm', 'Link reset password sudah dikirim ke ' + email + '.
+
+Silakan cek Gmail/kotak masuk, lalu buat password WebGIS baru dari link tersebut.', false);
     } catch (err) {
-        alert('Gagal mengirim reset password: ' + (err.message || err));
+        flashMessage('loginForm', firebaseFriendlyMessage(err, 'reset'), true);
     }
 };
 
@@ -9380,7 +9516,15 @@ async function handleLogin(e) {
     var remember = !!(document.getElementById('rememberMe') && document.getElementById('rememberMe').checked);
 
     if (!email || !password) {
-        flashMessage('loginForm', 'Email dan password harus diisi.', true);
+        flashMessage('loginForm', 'Email akun WebGIS dan password harus diisi.
+
+Untuk login, gunakan email lengkap seperti nama@gmail.com, bukan username tampilan.', true);
+        return;
+    }
+    if (!isValidEmailFormat(email)) {
+        flashMessage('loginForm', 'Format email belum benar.
+
+Isi kolom Email Akun WebGIS dengan email lengkap, contoh: nama@gmail.com. Username seperti juna28 tidak bisa dipakai untuk login.', true);
         return;
     }
 
@@ -9406,7 +9550,7 @@ async function handleLogin(e) {
         try { speakWelcomeSiforta(true); } catch (err) {}
         try { scrollToSection('sec-peta'); } catch (err) {}
     } catch (err) {
-        flashMessage('loginForm', 'Login gagal: ' + (err.message || err), true);
+        flashMessage('loginForm', firebaseFriendlyMessage(err, 'login'), true);
     }
 }
 
@@ -9425,7 +9569,15 @@ async function handleRegister(e) {
     var adminCode = getInputValue('register_admin_code');
 
     if (!nama || !email || !username || !password) {
-        flashMessage('registerForm', 'Nama, email, username, dan password wajib diisi.', true);
+        flashMessage('registerForm', 'Nama, email, username, dan password wajib diisi.
+
+Catatan: email dipakai untuk login dan reset password, sedangkan username hanya nama tampilan.', true);
+        return;
+    }
+    if (!isValidEmailFormat(email)) {
+        flashMessage('registerForm', 'Format email akun WebGIS belum benar.
+
+Gunakan email lengkap, contoh: nama@gmail.com. Jangan isi dengan username seperti juna28.', true);
         return;
     }
     if (password.length < 6) {
@@ -9442,6 +9594,10 @@ async function handleRegister(e) {
     }
     if (requestedRole === 'instansi' && (!namaInstansi || !jabatanInstansi || !emailInstansi)) {
         flashMessage('registerForm', 'Nama instansi/unit kerja, jabatan/posisi, dan email instansi wajib diisi untuk akun instansi.', true);
+        return;
+    }
+    if (requestedRole === 'instansi' && !isValidEmailFormat(emailInstansi)) {
+        flashMessage('registerForm', 'Email Instansi / Email Dinas harus berupa alamat email lengkap. Contoh: nama@klaten.go.id atau nama@atrbpn.go.id.', true);
         return;
     }
     if (requestedRole === 'admin' && adminCode !== ADMIN_INVITE_CODE) {
@@ -9476,13 +9632,13 @@ async function handleRegister(e) {
             createdAt: serverTimestamp()
         });
 
-        flashMessage('registerForm', 'Akun berhasil dibuat. Status: ' + labelFor(finalRole) + '.', false);
+        flashMessage('registerForm', 'Akun berhasil dibuat. Status: ' + labelFor(finalRole) + '.\n\nSimpan email akun WebGIS dan password Anda di browser/password manager. Demi keamanan, SIFORTA tidak mengirimkan password melalui email. Jika lupa password, gunakan menu Lupa password? untuk membuat password baru melalui email.', false);
         applyAccessUI({ loggedIn: true, uid: result.user.uid, email: email, username: username, nama: nama, role: finalRole, status: status });
         setLoginModalState(false);
         try { speakWelcomeSiforta(true); } catch (err) {}
         try { scrollToSection('sec-peta'); } catch (err) {}
     } catch (err) {
-        flashMessage('registerForm', 'Pendaftaran gagal: ' + (err.message || err), true);
+        flashMessage('registerForm', firebaseFriendlyMessage(err, 'register'), true);
     }
 }
 
