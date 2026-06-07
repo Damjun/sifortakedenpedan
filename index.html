@@ -7402,6 +7402,10 @@ var CAN_VIEW_POPUP = true;
 var CAN_DOWNLOAD_DATA = ['pelajar_peneliti', 'instansi', 'admin'].indexOf(USER_ROLE) !== -1;
 var CAN_ADD_DATA = ['instansi', 'admin'].indexOf(USER_ROLE) !== -1;
 var SHOULD_PLAY_WELCOME = false;
+// Paksa halaman pertama yang terlihat adalah menu login.
+// Ini mencegah pengguna langsung masuk ke halaman website karena session/cache lama.
+window.SIFORTA_FORCE_LOGIN_ON_LOAD = true;
+window.SIFORTA_LOGIN_ACTION_OCCURRED = false;
 
 /* ============================================================
    NAVIGASI & SCROLL SPY
@@ -9500,7 +9504,9 @@ window.firebaseLogout = async function firebaseLogout(event) {
     try { await signOut(auth); } catch (err) { console.warn(err); }
     localStorage.removeItem(STORAGE_AUTH);
     applyAccessUI({ loggedIn: false, username: 'Tamu', role: 'masyarakat' });
-    setLoginModalState(false);
+    window.SIFORTA_LOGIN_ACTION_OCCURRED = false;
+    showAuthForm('login');
+    setLoginModalState(true);
 };
 
 async function loadUserProfile(user) {
@@ -9546,6 +9552,7 @@ Isi kolom Email Akun WebGIS dengan email lengkap, contoh: nama@gmail.com. Userna
             status: profile.status || 'aktif'
         };
         applyAccessUI(authData);
+        window.SIFORTA_LOGIN_ACTION_OCCURRED = true;
         setLoginModalState(false);
         try { speakWelcomeSiforta(true); } catch (err) {}
         try { scrollToSection('sec-peta'); } catch (err) {}
@@ -9634,6 +9641,7 @@ Gunakan email lengkap, contoh: nama@gmail.com. Jangan isi dengan username sepert
 
         flashMessage('registerForm', 'Akun berhasil dibuat. Status: ' + labelFor(finalRole) + '.\n\nSimpan email akun WebGIS dan password Anda di browser/password manager. Demi keamanan, SIFORTA tidak mengirimkan password melalui email. Jika lupa password, gunakan menu Lupa password? untuk membuat password baru melalui email.', false);
         applyAccessUI({ loggedIn: true, uid: result.user.uid, email: email, username: username, nama: nama, role: finalRole, status: status });
+        window.SIFORTA_LOGIN_ACTION_OCCURRED = true;
         setLoginModalState(false);
         try { speakWelcomeSiforta(true); } catch (err) {}
         try { scrollToSection('sec-peta'); } catch (err) {}
@@ -9648,6 +9656,7 @@ function setupForms() {
         guestForm.addEventListener('submit', function(e) {
             e.preventDefault();
             applyAccessUI({ loggedIn: false, username: 'Tamu', nama: 'Masyarakat Umum', role: 'masyarakat' });
+            window.SIFORTA_LOGIN_ACTION_OCCURRED = true;
             try { speakWelcomeSiforta(true); } catch (err) {}
             setLoginModalState(false);
             try { scrollToSection('sec-peta'); } catch (err) {}
@@ -9715,7 +9724,14 @@ onAuthStateChanged(auth, async function(user) {
                 role: normalizeRole(profile.role),
                 status: profile.status || 'aktif'
             });
-            setLoginModalState(false);
+            // Kalau session Firebase masih tersimpan dari kunjungan lama, jangan langsung menutup login.
+            // Pengguna tetap diarahkan melihat menu login terlebih dahulu saat membuka link website.
+            if (window.SIFORTA_LOGIN_ACTION_OCCURRED) {
+                setLoginModalState(false);
+            } else if (window.SIFORTA_FORCE_LOGIN_ON_LOAD) {
+                showAuthForm('login');
+                setLoginModalState(true);
+            }
         }
     } catch (err) {
         console.warn('Gagal membaca profil user:', err);
@@ -9727,19 +9743,17 @@ document.addEventListener('DOMContentLoaded', function() {
     updateRegisterRoleFields();
     applyAccessUI({ loggedIn: false, username: 'Tamu', role: 'masyarakat' });
 
-    // Saat link website dibuka, tampilkan laman login terlebih dahulu.
-    // Pengunjung tetap bisa memilih tombol Masuk sebagai Masyarakat/Tamu.
-    setTimeout(function() {
-        try {
-            if (!auth.currentUser) {
-                showAuthForm('login');
-                setLoginModalState(true);
-            }
-        } catch (err) {
+    // Saat link website dibuka, tampilkan menu login terlebih dahulu.
+    // Ini tetap dipaksa walaupun browser masih menyimpan session/login lama.
+    function forceInitialLoginModal() {
+        if (!window.SIFORTA_LOGIN_ACTION_OCCURRED && window.SIFORTA_FORCE_LOGIN_ON_LOAD) {
             showAuthForm('login');
             setLoginModalState(true);
         }
-    }, 250);
+    }
+    forceInitialLoginModal();
+    setTimeout(forceInitialLoginModal, 350);
+    setTimeout(forceInitialLoginModal, 1200);
 });
 </script>
 
