@@ -6423,6 +6423,37 @@ body.has-login-modal .main {
     border: 1px solid #abefc6 !important;
 }
 
+
+
+/* ============================================================
+   PATCH V7: LOGIN WAJIB MUNCUL SAAT LINK DIBUKA
+   ============================================================ */
+.simple-login-cancel {
+    display: none !important;
+}
+#loginModal[style*="display:flex"],
+#loginModal[style*="display: flex"] {
+    display: flex;
+}
+body.has-login-modal .navbar,
+body.has-login-modal .main {
+    filter: blur(4px);
+    pointer-events: none;
+    user-select: none;
+}
+.login-first-reminder {
+    margin: 0 0 14px;
+    padding: 12px 14px;
+    border-radius: 16px;
+    background: rgba(224,245,234,0.92);
+    border: 1px solid rgba(42,138,82,0.18);
+    color: var(--green-900);
+    font-size: 12.5px;
+    line-height: 1.6;
+    font-weight: 700;
+}
+.login-first-reminder b { color: var(--green-800); }
+
 </style>
 
 <script>
@@ -6472,7 +6503,7 @@ window.addEventListener('DOMContentLoaded', function() {
 </script>
 
 </head>
-<body>
+<body class="has-login-modal">
 
 <!-- ============================================================
      NAVBAR
@@ -7190,7 +7221,7 @@ window.addEventListener('DOMContentLoaded', function() {
      LOGIN / BUAT AKUN MODAL - MODEL GEOPORTAL, TAMU, ROLE KHUSUS
      ============================================================ -->
 
-<div id="loginModal" style="">
+<div id="loginModal" style="display:flex;">
     <div class="login-box simple-login-card">
         <div class="simple-login-top">
             <div class="simple-login-icon">🔐</div>
@@ -7406,6 +7437,26 @@ var SHOULD_PLAY_WELCOME = false;
 // Ini mencegah pengguna langsung masuk ke halaman website karena session/cache lama.
 window.SIFORTA_FORCE_LOGIN_ON_LOAD = true;
 window.SIFORTA_LOGIN_ACTION_OCCURRED = false;
+
+// V7: tampilkan login sejak halaman dibuka, sebelum pengguna memilih login/daftar/tamu.
+(function() {
+    function showLoginFirst() {
+        var modal = document.getElementById('loginModal');
+        if (!modal) return;
+        if (!window.SIFORTA_LOGIN_ACTION_OCCURRED && window.SIFORTA_FORCE_LOGIN_ON_LOAD) {
+            modal.style.display = 'flex';
+            document.body.classList.add('has-login-modal');
+        }
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', showLoginFirst);
+    } else {
+        showLoginFirst();
+    }
+    setTimeout(showLoginFirst, 100);
+    setTimeout(showLoginFirst, 500);
+    setTimeout(showLoginFirst, 1500);
+})();
 
 /* ============================================================
    NAVIGASI & SCROLL SPY
@@ -7714,8 +7765,8 @@ function openLogin() {
 }
 
 function closeLogin() {
-        setLoginModalState(false);
-    }
+    setLoginModalState(false);
+}
 
 function selectLoginRole(role, button) {
     var select = document.getElementById('login_role_hint_select');
