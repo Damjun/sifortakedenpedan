@@ -6486,6 +6486,32 @@ body.siforta-site-open #loginModal {
 .page-section, .section-body {
     overflow: visible !important;
 }
+
+
+/* ============================================================
+   PATCH V13: FOTO ANGGOTA TEGAK / TIDAK MIRING
+   Penyebab versi sebelumnya: foto landscape otomatis diberi class
+   member-photo-landscape lalu diputar -90deg. Patch ini mematikan
+   rotasi otomatis agar semua foto anggota tampil tegak sesuai file asli.
+   ============================================================ */
+.team-photo-v6 img,
+.team-photo-v6 img.member-photo-landscape,
+.team-photo-v6 img.member-photo-portrait {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    object-fit: cover !important;
+    object-position: center center !important;
+    transform: none !important;
+    rotate: 0deg !important;
+    image-orientation: from-image !important;
+}
+
+.team-photo-v6 {
+    overflow: hidden !important;
+    background: #f4f7f5 !important;
+}
+
 </style>
 
 <script>
@@ -9899,5 +9925,26 @@ document.addEventListener('DOMContentLoaded', function() {
     }, true);
 })();
 </script>
+
+<script>
+/* PATCH V13: matikan auto-rotate foto anggota */
+window.fixMemberPhoto = function(img) {
+    if (!img) return;
+    img.classList.remove('member-photo-landscape');
+    img.classList.add('member-photo-portrait');
+    img.style.transform = 'none';
+    img.style.rotate = '0deg';
+    img.style.width = '100%';
+    img.style.height = '100%';
+    img.style.objectFit = 'cover';
+    img.style.objectPosition = 'center center';
+};
+window.addEventListener('load', function() {
+    document.querySelectorAll('.team-photo-v6 img').forEach(function(img) {
+        window.fixMemberPhoto(img);
+    });
+});
+</script>
+
 </body>
 </html>
